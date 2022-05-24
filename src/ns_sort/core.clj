@@ -49,7 +49,7 @@
 
 (defn sort-item
   [item]
-  (into [] (map (fn [part] (if (sequential? part) (sort part) part)) item)))
+  (into [] (map (fn [part] (if (sequential? part) (into [] (sort part)) part)) item)))
 
 (defn sort-requires
   "Sort requires.
