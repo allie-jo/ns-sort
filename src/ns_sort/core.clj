@@ -32,7 +32,7 @@
             (string? item)
             (do (.append sb \newline)
                 (.append sb "  ")
-                (.append sb (str "\"" (string/escape item {\" "\\\""}) "\"")))
+                (.append sb (str "\"" (clojure.string/escape item {\" "\\\""}) "\"")))
 
             :else (do (.append sb \newline) (.append sb "  ") (.append sb (str item)))))
     (.append sb ")")
@@ -53,8 +53,8 @@
   Priority: 1. project namespaces
             2. 3-td party dependency namespaces"
   [title requires]
-  (let [main-ns (first (string/split (str title) #"\."))
-        items (group-by #(string/starts-with? (sort-fn %) main-ns) requires)
+  (let [main-ns (first (clojure.string/split (str title) #"\."))
+        items (group-by #(clojure.string/starts-with? (sort-fn %) main-ns) requires)
         sorted-requires (concat (sort-by sort-fn (get items true))
                                 (sort-by sort-fn (get items false)))]
     sorted-requires))
@@ -83,42 +83,43 @@
 (defn update-code
   "Update code string"
   [code]
-  (let [ns-start (.indexOf code "(ns")
+  (let [ns-start (clojure.string/index-of code "(ns")
         ns-end (loop [start ns-start
                       cnt 0]
-                 (cond (= \( (.charAt code start)) (recur (inc start) (inc cnt))
-                       (= \) (.charAt code start))
+                 (cond (= \( (get code start)) (recur (inc start) (inc cnt))
+                       (= \) (get code start))
                        (if (zero? (dec cnt)) (inc start) (recur (inc start) (dec cnt)))
 
                        :else (recur (inc start) cnt)))
         ns-data (subs code ns-start ns-end)
         prefix (subs code 0 ns-start)
         postfix (subs code ns-end)]
-    (if (string/includes? ns-data ";") code (str prefix (update-ns ns-data) postfix))))
+    (if (clojure.string/includes? ns-data ";") code (str prefix (update-ns ns-data) postfix))))
 
 
 (defn sort-file
   "Read, update and write to file"
-  [^File file]
-  (try (let [data (slurp file)] (spit file (update-code data)))
+  [file]
+  (try (let [data (slurp file)]
+         (spit file (update-code data)))
        (catch Exception e
-         (println (str "Cannot update file: " (.getAbsolutePath file))
-                                   e))))
+         (println (str "Cannot update file: " file)
+                  e))))
 
 
-(defn sort-path
-  "Filter for only .clj, .cljs, .cljc files"
-  [path]
-  (let [files (file-seq (io/file path))
-        files (filter #(and (or (string/ends-with? (.getAbsolutePath %) ".clj")
-                                (string/ends-with? (.getAbsolutePath %) ".cljs")
-                                (string/ends-with? (.getAbsolutePath %) ".cljc"))
-                            (false? (.isDirectory %)))
-                      files)]
-    (doseq [file files] (sort-file file))))
+;; (defn sort-path
+;;   "Filter for only .clj, .cljs, .cljc files"
+;;   [path]
+;;   (let [files (file-seq (io/file path))
+;;         files (filter #(and (or (clojure.string/ends-with? (.getAbsolutePath %) ".clj")
+;;                                 (clojure.string/ends-with? (.getAbsolutePath %) ".cljs")
+;;                                 (clojure.string/ends-with? (.getAbsolutePath %) ".cljc"))
+;;                             (false? (.isDirectory %)))
+;;                       files)]
+;;     (doseq [file files] (sort-file file))))
 
 
 (defn -main
   "Sort :require block in each namespace found in src folders."
   [& files]
-  (doseq [file files] (sort-file (io/file file))))
+  (doseq [file files] (sort-file file)))
