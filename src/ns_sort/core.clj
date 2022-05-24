@@ -13,31 +13,31 @@
   [data]
   (let [sb (StringBuilder. (str "(ns " (second data)))]
     (doseq [item (drop 2 data)]
-      (cond (= :require (first item)) (do (.append sb \newline)
-                                          (.append sb "  (:require ")
-                                          (.append sb (second item))
-                                          (doseq [req (drop 2 item)]
-                                            (.append sb \newline)
-                                            (.append sb "            ")
-                                            (.append sb req))
-                                          (.append sb ")"))
-            (= :import (first item)) (do (.append sb \newline)
-                                         (.append sb "  (:import ")
-                                         (.append sb (second item))
-                                         (doseq [req (drop 2 item)]
-                                           (.append sb \newline)
-                                           (.append sb "           ")
-                                           (.append sb req))
-                                         (.append sb ")"))
-            (string? item)
-            (do (.append sb \newline)
-                (.append sb "  ")
-                (.append sb (str "\"" (clojure.string/escape item {\" "\\\""}) "\"")))
+      (cond
+        (= :require (first item)) (do (.append sb \newline)
+                                      (.append sb "  (:require ")
+                                      (.append sb (second item))
+                                      (doseq [req (drop 2 item)]
+                                        (.append sb \newline)
+                                        (.append sb "            ")
+                                        (.append sb req))
+                                      (.append sb ")"))
+        (= :import (first item)) (do (.append sb \newline)
+                                     (.append sb "  (:import ")
+                                     (.append sb (second item))
+                                     (doseq [req (drop 2 item)]
+                                       (.append sb \newline)
+                                       (.append sb "           ")
+                                       (.append sb req))
+                                     (.append sb ")"))
+        (string? item)
+        (do (.append sb \newline)
+            (.append sb "  ")
+            (.append sb (str "\"" (clojure.string/escape item {\" "\\\""}) "\"")))
 
-            :else (do (.append sb \newline) (.append sb "  ") (.append sb (str item)))))
+        :else (do (.append sb \newline) (.append sb "  ") (.append sb (str item)))))
     (.append sb ")")
     (.toString sb)))
-
 
 (defn sort-fn
   [form]
@@ -47,6 +47,14 @@
         str)
     (str form)))
 
+(defn sort-item
+  [item]
+  (let [idx (.indexOf item :refer)]
+    (if (= idx -1)
+      item
+      (if-let [refer-list (get item (inc idx))]
+        (assoc item (inc idx) (into [] (sort refer-list)))
+        (throw (Exception. (str "Invalid refer form: " item)))))))
 
 (defn sort-requires
   "Sort requires.
@@ -54,11 +62,21 @@
             2. 3-td party dependency namespaces"
   [title requires]
   (let [main-ns (first (clojure.string/split (str title) #"\."))
-        items (group-by #(clojure.string/starts-with? (sort-fn %) main-ns) requires)
+        items (->> requires
+                   (map sort-item)
+                   (group-by #(clojure.string/starts-with? (sort-fn %) main-ns)))
         sorted-requires (concat (sort-by sort-fn (get items true))
                                 (sort-by sort-fn (get items false)))]
     sorted-requires))
 
+(defn sort-imports
+  [title imports]
+  (->> imports
+       (map (fn [item]
+              (if (sequential? item)
+                (let [[namespace & classes] item] (cons namespace (sort classes)))
+                item)))
+       (sort-by sort-fn)))
 
 ;; (update-ns (slurp (io/file "src/leiningen/b.txt")))
 (defn update-ns
@@ -68,11 +86,14 @@
         title (second data)
         requires (first (filter #(and (sequential? %) (= :require (first %))) data))
         requires-sorted (concat [:require] (sort-requires title (rest requires)))
-        sorted-data (map (fn [item]
-                           (if (and (sequential? item) (= :require (first item)))
-                             requires-sorted
-                             item))
-                         data)]
+        imports (first (filter #(and (sequential? %) (= :import (first %))) data))
+        imports-sorted (concat [:import] (sort-imports title (rest imports)))
+        sorted-data
+        (map (fn [item]
+               (cond (and (sequential? item) (= :require (first item))) requires-sorted
+                     (and (sequential? item) (= :import (first item))) imports-sorted
+                     :else item))
+             data)]
     ;; if the order is the same, keep old code format
     (if-not (= data sorted-data) (format-ns sorted-data) s)))
 
@@ -94,26 +115,32 @@
         ns-data (subs code ns-start ns-end)
         prefix (subs code 0 ns-start)
         postfix (subs code ns-end)]
-    (if (clojure.string/includes? ns-data ";") code (str prefix (update-ns ns-data) postfix))))
+    (if (clojure.string/includes? ns-data ";")
+      code
+      (str prefix (update-ns ns-data) postfix))))
+
+(comment (def code (slurp "test/data/unsorted.clj-test"))
+         (println code)
+         (println (update-code code)))
 
 
 (defn sort-file
   "Read, update and write to file"
   [file]
-  (try (let [data (slurp file)]
-         (spit file (update-code data)))
-       (catch Exception e
-         (println (str "Cannot update file: " file)
-                  e))))
+  (try (let [data (slurp file)] (spit file (update-code data)))
+       (catch Exception e (println (str "Cannot update file: " file) e))))
 
 
 ;; (defn sort-path
 ;;   "Filter for only .clj, .cljs, .cljc files"
 ;;   [path]
 ;;   (let [files (file-seq (io/file path))
-;;         files (filter #(and (or (clojure.string/ends-with? (.getAbsolutePath %) ".clj")
-;;                                 (clojure.string/ends-with? (.getAbsolutePath %) ".cljs")
-;;                                 (clojure.string/ends-with? (.getAbsolutePath %) ".cljc"))
+;;         files (filter #(and (or (clojure.string/ends-with? (.getAbsolutePath %)
+;;         ".clj")
+;;                                 (clojure.string/ends-with? (.getAbsolutePath %)
+;;                                 ".cljs")
+;;                                 (clojure.string/ends-with? (.getAbsolutePath %)
+;;                                 ".cljc"))
 ;;                             (false? (.isDirectory %)))
 ;;                       files)]
 ;;     (doseq [file files] (sort-file file))))
