@@ -49,12 +49,7 @@
 
 (defn sort-item
   [item]
-  (let [idx (.indexOf item :refer)]
-    (if (= idx -1)
-      item
-      (if-let [refer-list (get item (inc idx))]
-        (assoc item (inc idx) (into [] (sort refer-list)))
-        (throw (Exception. (str "Invalid refer form: " item)))))))
+  (into [] (map (fn [part] (if (sequential? part) (sort part) part)) item)))
 
 (defn sort-requires
   "Sort requires.
