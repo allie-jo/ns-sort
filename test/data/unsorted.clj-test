@@ -13,6 +13,7 @@
             [ring.util.http-response :refer [ok content-type]]
             [ring.swagger.json-schema :refer [describe]]
             [my-server.db.api.anomalies :as db-anomalies]
+            clojure.string
             [schema.core :as s])
   (:import (java.util Date Calendar)
            (java.net ServerSocket URI)

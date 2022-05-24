@@ -49,7 +49,9 @@
 
 (defn sort-item
   [item]
-  (into [] (map (fn [part] (if (sequential? part) (into [] (sort part)) part)) item)))
+  (if (sequential? item)
+    (into [] (map (fn [part] (if (sequential? part) (into [] (sort part)) part)) item))
+    item))
 
 (defn sort-requires
   "Sort requires.
@@ -103,9 +105,9 @@
     (let [ns-end (loop [start ns-start
                         cnt 0]
                    (cond (= \( (get code start)) (recur (inc start) (inc cnt))
-                         (= \) (get code start))
-                         (if (zero? (dec cnt)) (inc start) (recur (inc start) (dec cnt)))
-
+                         (= \) (get code start)) (if (zero? (dec cnt))
+                                                   (inc start)
+                                                   (recur (inc start) (dec cnt)))
                          :else (recur (inc start) cnt)))
           ns-data (subs code ns-start ns-end)
           prefix (subs code 0 ns-start)
@@ -115,9 +117,16 @@
         (str prefix (update-ns ns-data) postfix)))
     code))
 
-(comment (def code (slurp "test/data/broken.clj-test"))
-         (println code)
-         (println (update-code code)))
+(comment
+ (def code
+   "
+(ns bengal.noise-test.tomjkidd
+  \"Ensures all forms in bengal.noise.tomjkidd.* compile\"
+  (:require bengal.noise.tomjkidd.db))
+")
+ (def code (slurp "test/data/broken.clj-test"))
+ (println code)
+ (println (update-code code)))
 
 
 (defn sort-file
