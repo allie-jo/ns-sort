@@ -1,0 +1,3 @@
+{:style [:community :pair-nl :binding-nl :map-nl :keyword-respect-nl]
+ :map {:comma? false}
+ :width 88}
