@@ -99,22 +99,23 @@
 (defn update-code
   "Update code string"
   [code]
-  (let [ns-start (clojure.string/index-of code "(ns")
-        ns-end (loop [start ns-start
-                      cnt 0]
-                 (cond (= \( (get code start)) (recur (inc start) (inc cnt))
-                       (= \) (get code start))
-                       (if (zero? (dec cnt)) (inc start) (recur (inc start) (dec cnt)))
+  (if-let [ns-start (clojure.string/index-of code "(ns")]
+    (let [ns-end (loop [start ns-start
+                        cnt 0]
+                   (cond (= \( (get code start)) (recur (inc start) (inc cnt))
+                         (= \) (get code start))
+                         (if (zero? (dec cnt)) (inc start) (recur (inc start) (dec cnt)))
 
-                       :else (recur (inc start) cnt)))
-        ns-data (subs code ns-start ns-end)
-        prefix (subs code 0 ns-start)
-        postfix (subs code ns-end)]
-    (if (clojure.string/includes? ns-data ";")
-      code
-      (str prefix (update-ns ns-data) postfix))))
+                         :else (recur (inc start) cnt)))
+          ns-data (subs code ns-start ns-end)
+          prefix (subs code 0 ns-start)
+          postfix (subs code ns-end)]
+      (if (clojure.string/includes? ns-data ";")
+        code
+        (str prefix (update-ns ns-data) postfix)))
+    code))
 
-(comment (def code (slurp "test/data/unsorted.clj-test"))
+(comment (def code (slurp "test/data/broken.clj-test"))
          (println code)
          (println (update-code code)))
 
