@@ -34,4 +34,5 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
+          platforms: linux/arm64, linux/amd64
           tags: allisoncasey327/ns-sort:latest
