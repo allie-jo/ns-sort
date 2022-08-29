@@ -1,133 +1,102 @@
 (ns ns-sort.core
   (:gen-class)
-  (:require [clojure.java.io :as io]
-            [clojure.string :as string])
+  (:require [clojure.string :as str]
+            [rewrite-clj.parser :as p]
+            [rewrite-clj.zip :as z])
   (:import (java.io File)))
 
+(defn ^:private get-sortable
+  "Given a zloc, get something out of it that is sortable.
 
-;; =====================================================================================================================
-;; Sort :require block
-;; =====================================================================================================================
-(defn format-ns
-  "Format ns block"
-  [data]
-  (let [sb (StringBuilder. (str "(ns " (second data)))]
-    (doseq [item (drop 2 data)]
-      (cond
-        (= :require (first item)) (do (.append sb \newline)
-                                      (.append sb "  (:require ")
-                                      (.append sb (second item))
-                                      (doseq [req (drop 2 item)]
-                                        (.append sb \newline)
-                                        (.append sb "            ")
-                                        (.append sb req))
-                                      (.append sb ")"))
-        (= :import (first item)) (do (.append sb \newline)
-                                     (.append sb "  (:import ")
-                                     (.append sb (second item))
-                                     (doseq [req (drop 2 item)]
-                                       (.append sb \newline)
-                                       (.append sb "           ")
-                                       (.append sb req))
-                                     (.append sb ")"))
-        (string? item)
-        (do (.append sb \newline)
-            (.append sb "  ")
-            (.append sb (str "\"" (clojure.string/escape item {\" "\\\""}) "\"")))
+  ORIGINALLY FROM: zprint.rewrite"
+  [zloc]
+  (if (z/seq? zloc)
+    (-> zloc z/down z/string)
+    (z/string zloc)))
 
-        :else (do (.append sb \newline) (.append sb "  ") (.append sb (str item)))))
-    (.append sb ")")
-    (.toString sb)))
+(defn ^:private sort-val
+  "Sort the everything in the seq to the right of zloc.
 
-(defn sort-fn
-  [form]
-  (if (sequential? form)
-    (-> form
-        first
-        str)
-    (str form)))
+  ORIGINALLY FROM: zprint.rewrite"
+  [zloc sort-fn]
+  (let [;; zloc (z/next zloc)
+        dep-seq
+        (loop [nloc zloc out []] (if nloc (recur (z/right nloc) (conj out nloc)) out))
 
-(defn sort-item
-  [item]
-  (if (sequential? item)
-    (into [] (map (fn [part] (if (sequential? part) (into [] (sort part)) part)) item))
-    item))
+        sorted-seq (sort-by sort-fn dep-seq)]
+    (loop [nloc zloc
+           new-loc sorted-seq
+           last-loc nil]
+      (if new-loc
+        (let [new-z (first new-loc)
+              ; rewrite-cljs doesn't handle z/node for :uneval
+              ; so we will get an :uneval node a different way
+              new-node (if (= (z/tag new-z) :uneval)
+                         (p/parse-string (z/string new-z))
+                         (z/node new-z))
+              ; use clojure.zip for cljs, since the z/replace has
+              ; a built-in coerce, which doesn't work for an :uneval
+              ;; #?(:clj (z/replace nloc new-node)
+              ;;    :cljs (clojure.zip/replace nloc new-node))
+              replaced-loc (z/replace nloc new-node)]
+          (recur (z/right replaced-loc) (next new-loc) replaced-loc))
+        (z/up last-loc)))))
 
-(defn sort-requires
-  "Sort requires.
-  Priority: 1. project namespaces
-            2. 3-td party dependency namespaces"
-  [title requires]
-  (let [main-ns (first (clojure.string/split (str title) #"\."))
-        items (->> requires
-                   (map sort-item)
-                   (group-by #(clojure.string/starts-with? (sort-fn %) main-ns)))
-        sorted-requires (concat (sort-by sort-fn (get items true))
-                                (sort-by sort-fn (get items false)))]
-    sorted-requires))
+(defn sort-by-ns-first
+  [title]
+  (fn [zloc]
+    (let [main-ns (first (str/split (str title) #"\."))
+          sortable (get-sortable zloc)]
+      (if (str/starts-with? sortable main-ns)
+        (str " " sortable)  ; add a space to force this to the top
+        sortable))))
 
-(defn sort-imports
-  [title imports]
-  (->> imports
-       (map (fn [item]
-              (if (sequential? item)
-                (let [[namespace & classes] item] (cons namespace (sort classes)))
-                item)))
-       (sort-by sort-fn)))
+(defn sort-require
+  [zloc title]
+  (-> zloc
+      (z/prewalk (fn [zloc] (= :refer (z/sexpr zloc)))
+                 (fn [zloc] (sort-val (z/down (z/next zloc)) get-sortable)))
+      z/down
+      z/next
+      (sort-val (sort-by-ns-first title))))
 
-;; (update-ns (slurp (io/file "src/leiningen/b.txt")))
-(defn update-ns
-  "Parse ns string block and update ns block"
-  [s]
-  (let [data (read-string s)
-        title (second data)
-        requires (first (filter #(and (sequential? %) (= :require (first %))) data))
-        requires-sorted (concat [:require] (sort-requires title (rest requires)))
-        imports (first (filter #(and (sequential? %) (= :import (first %))) data))
-        imports-sorted (concat [:import] (sort-imports title (rest imports)))
-        sorted-data
-        (map (fn [item]
-               (cond (and (sequential? item) (= :require (first item))) requires-sorted
-                     (and (sequential? item) (= :import (first item))) imports-sorted
-                     :else item))
-             data)]
-    ;; if the order is the same, keep old code format
-    (if-not (= data sorted-data) (format-ns sorted-data) s)))
+(defn sort-import
+  [zloc title]
+  (-> zloc
+      z/down
+      z/next
+      (sort-val (sort-by-ns-first title))
+      (z/prewalk (fn [zloc] (z/seq? zloc))
+                 (fn [zloc] (sort-val (z/next (z/down zloc)) get-sortable)))))
 
-
-;; =====================================================================================================================
-;; Handle files
-;; =====================================================================================================================
 (defn update-code
-  "Update code string"
   [code]
-  (if-let [ns-start (clojure.string/index-of code "(ns")]
-    (let [ns-end (loop [start ns-start
-                        cnt 0]
-                   (cond (= \( (get code start)) (recur (inc start) (inc cnt))
-                         (= \) (get code start)) (if (zero? (dec cnt))
-                                                   (inc start)
-                                                   (recur (inc start) (dec cnt)))
-                         :else (recur (inc start) cnt)))
-          ns-data (subs code ns-start ns-end)
-          prefix (subs code 0 ns-start)
-          postfix (subs code ns-end)]
-      (if (clojure.string/includes? ns-data ";")
-        code
-        (str prefix (update-ns ns-data) postfix)))
+  (if-let [zloc (-> (z/of-string code)
+                    (z/find-value z/next 'ns)
+                    z/up)]
+    (let [title (-> zloc
+                    z/down
+                    z/next
+                    z/sexpr)
+          require-zloc (z/find-value zloc z/next ':require)
+          import-zloc (z/find-value zloc z/next ':import)]
+      (cond-> zloc
+        require-zloc (z/subedit-> (z/find-value z/next ':require) z/up (sort-require title))
+        import-zloc (z/subedit-> (z/find-value z/next ':import) z/up (sort-import title))
+        true z/root-string))
     code))
 
 (comment
- (def code
-   "
+  (println (update-code (slurp "/Users/alliejo/dev/cloned/adt/src/adt/outbox/impl/db.clj")))
+  (def code
+    "
 (ns bengal.noise-test.tomjkidd
   \"Ensures all forms in bengal.noise.tomjkidd.* compile\"
   (:require bengal.noise.tomjkidd.db))
 ")
- (def code (slurp "test/data/broken.clj-test"))
- (println code)
- (println (update-code code)))
-
+  (def code (slurp "test/data/broken.clj-test"))
+  (println code)
+  (println (update-code code)))
 
 (defn sort-file
   "Read, update and write to file"
