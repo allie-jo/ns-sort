@@ -5,11 +5,12 @@
   "This is a doc string, FYI :D
   => go 1
   \"hmm\"
+  it also contains parens {[()]}
   "
-  {:author "John Doe"
-   :last-update-date "23-10-2017"}
+  {:author "John Doe", :last-update-date "23-10-2017"}
   (:require [my-server.web.handlers.schema.common :refer [ClickhouseFieldDef]]
-            [compojure.api.sweet :refer [POST GET]]
+            [compojure.api.sweet :refer [POST
+                                         GET]]
             [ring.util.http-response :refer [ok content-type]]
             [ring.swagger.json-schema :refer [describe]]
             [my-server.db.api.anomalies :as db-anomalies]
