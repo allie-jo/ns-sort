@@ -31,3 +31,7 @@ repos:
       - id: commitizen
       - id: commitizen-branch
         stages: [push]
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.10.0
+    hooks:
+      - id: hadolint-docker
