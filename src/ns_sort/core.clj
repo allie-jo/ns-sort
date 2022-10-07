@@ -89,7 +89,10 @@
 (defn sort-file
   "Read, update and write to file"
   [file]
-  (try (let [data (slurp file)] (spit file (update-code data)))
+  (try (let [data (slurp file)
+             updated (update-code data)]
+         (when-not (= data updated)
+           (spit file updated)))
        (catch Exception e (println (str "Cannot update file: " file) e))))
 
 (defn -main
