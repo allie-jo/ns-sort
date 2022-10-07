@@ -1,0 +1,7 @@
+---
+- id: ns-sort-docker
+  name: ns-sort (via Docker)
+  description: Runs ns-sort Docker image to sort clojure files
+  language: docker_image
+  types: ["clojure"]
+  entry: allisoncasey327/ns-sort
