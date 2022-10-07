@@ -1,7 +1,6 @@
 (ns ns-sort-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is]]
             [ns-sort.core :as ns-sort]))
-
 
 ;; (deftest format-ns-test
 ;;   (is (= (ns-sort/format-ns '(ns
@@ -13,7 +12,6 @@
 ;;   (:require [clojure.java.io :as io]
 ;;             [clojure.string :as string])
 ;;   (:import (java.io File)))")))
-
 
 ;; (deftest sort-requires-test
 ;;   (is (= (ns-sort/sort-requires 'my-server '[[schema.core :as s]
@@ -29,7 +27,6 @@
 ;;            [ring.swagger.json-schema :refer [describe]]
 ;;            [ring.util.http-response :refer [content-type ok]]
 ;;            [schema.core :as s]])))
-
 
 ;; (deftest update-ns-test
 ;;   (is (= (ns-sort/update-ns "(ns my-server
@@ -47,7 +44,6 @@
 ;;             [ring.swagger.json-schema :refer [describe]]
 ;;             [ring.util.http-response :refer [content-type ok]]
 ;;             [schema.core :as s]))")))
-
 
 (deftest update-code-test
   (is (= (ns-sort/update-code (slurp "test/data/unsorted.clj-test"))

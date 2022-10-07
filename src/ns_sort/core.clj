@@ -2,8 +2,7 @@
   (:gen-class)
   (:require [clojure.string :as str]
             [rewrite-clj.parser :as p]
-            [rewrite-clj.zip :as z])
-  (:import (java.io File)))
+            [rewrite-clj.zip :as z]))
 
 (defn ^:private get-sortable
   "Given a zloc, get something out of it that is sortable.
@@ -104,7 +103,6 @@
   (try (let [data (slurp file)] (spit file (update-code data)))
        (catch Exception e (println (str "Cannot update file: " file) e))))
 
-
 ;; (defn sort-path
 ;;   "Filter for only .clj, .cljs, .cljc files"
 ;;   [path]
@@ -118,7 +116,6 @@
 ;;                             (false? (.isDirectory %)))
 ;;                       files)]
 ;;     (doseq [file files] (sort-file file))))
-
 
 (defn -main
   "Sort :require block in each namespace found in src folders."
