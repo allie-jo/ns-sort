@@ -13,18 +13,13 @@ jobs:
   merge:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - uses: actions/checkout@v2
-    - name: Set Git config
-      run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "Github Actions"
-    - name: Merge main into production
-      run: |
-          git fetch --unshallow
-          git checkout production
-          git pull
-          git merge --ff-only main
-          git push
+      - uses: actions/checkout@master
+
+      - name: Merge development -> staging
+        uses: devmasx/merge-branch@master
+        with:
+          type: now
+          from_branch: main
+          target_branch: production
+          github_token: ${{ github.token }}
