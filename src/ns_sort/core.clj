@@ -69,6 +69,7 @@
                  (fn [zloc] (sort-val (z/next (z/down zloc)) get-sortable)))))
 
 (defn update-code
+  "Takes a string `code` and returns an updated string with a sorted `ns` form."
   [code]
   (if-let [zloc (-> (z/of-string code)
                     (z/find-value z/next 'ns)
