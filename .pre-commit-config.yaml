@@ -1,0 +1,33 @@
+default_install_hook_types: [pre-commit, commit-msg]
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: local
+    hooks:
+      - id: ns-sort
+        name: ns-sort (via docker)
+        entry: allisoncasey327/ns-sort
+        language: docker_image
+        files: \.clj$
+      - id: clj-kondo
+        name: clj-kondo (via docker)
+        entry: cljkondo/clj-kondo:2022.10.05-alpine
+        args: [clj-kondo, --lint]
+        language: docker_image
+        files: \.clj$
+      - id: cljfmt
+        name: cljfmt (via docker)
+        entry: allisoncasey327/cljfmt
+        language: docker_image
+        args: [fix]
+        files: \.clj$
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v2.35.0
+    hooks:
+      - id: commitizen
+      - id: commitizen-branch
+        stages: [push]
