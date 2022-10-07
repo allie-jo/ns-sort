@@ -1,31 +1,27 @@
 # ns-sort
 
-A Leiningen plugin to sort namespaces in `:require` block.
-
-[![Clojars Project](https://img.shields.io/clojars/v/ns-sort.svg)](https://clojars.org/ns-sort)
+A command line tool to sort namespce `:require` and `:import` forms
 
 ## Description
 
-![ns-sort](docs/ns-sort.png?raw=true "ns-sort")
+The cli tool to sort namespaces in `:require` and `:import` blocks with
+lexicographic order.
 
-The plugin sort namespaces in `:require` block with lexicographic order.
-
-The project namespaces have more priority compared with other 3rd party dependencies.
+The project namespaces have more priority compared with other 3rd party
+dependencies.
 
 The plugin supports `.clj`, `.cljs`, `.cljc` files.
 
 ## Usage
 
-Put `[ns-sort "1.0.0"]` into the `:plugins` vector of your `:user` profile.
+### Via Docker
 
-Use this for project-level plugins:
+`ns-sort` is provided as a Docker image for `amd64` and `arm64`. To run:
 
-Put `[ns-sort "1.0.0"]` into the `:plugins` vector of your project.clj.
+```bash
+$ docker run --mount type=bind,source="$(pwd)",target=/src --workdir /src -i allisoncasey327/ns-sort <files>
+```
 
-Run:
+## Acknowledgments
 
-    $ lein ns-sort
-
-## License
-
-Copyright © 2021 ilevd
+Based on the excellent work by ilevd: https://github.com/ilevd/ns-sort
