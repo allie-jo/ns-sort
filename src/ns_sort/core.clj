@@ -85,37 +85,11 @@
         true z/root-string))
     code))
 
-(comment
-  (println (update-code (slurp "/Users/alliejo/dev/cloned/adt/src/adt/outbox/impl/db.clj")))
-  (def code
-    "
-(ns bengal.noise-test.tomjkidd
-  \"Ensures all forms in bengal.noise.tomjkidd.* compile\"
-  (:require bengal.noise.tomjkidd.db))
-")
-  (def code (slurp "test/data/broken.clj-test"))
-  (println code)
-  (println (update-code code)))
-
 (defn sort-file
   "Read, update and write to file"
   [file]
   (try (let [data (slurp file)] (spit file (update-code data)))
        (catch Exception e (println (str "Cannot update file: " file) e))))
-
-;; (defn sort-path
-;;   "Filter for only .clj, .cljs, .cljc files"
-;;   [path]
-;;   (let [files (file-seq (io/file path))
-;;         files (filter #(and (or (clojure.string/ends-with? (.getAbsolutePath %)
-;;         ".clj")
-;;                                 (clojure.string/ends-with? (.getAbsolutePath %)
-;;                                 ".cljs")
-;;                                 (clojure.string/ends-with? (.getAbsolutePath %)
-;;                                 ".cljc"))
-;;                             (false? (.isDirectory %)))
-;;                       files)]
-;;     (doseq [file files] (sort-file file))))
 
 (defn -main
   "Sort :require block in each namespace found in src folders."
