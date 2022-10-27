@@ -2,10 +2,11 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "production" ]
-  pull_request:
-    branches: [ "production" ]
-
+    branches:
+      - main
+      - 'releases/**'
+    tags:
+      - v*
 jobs:
   docker:
     runs-on: ubuntu-latest
