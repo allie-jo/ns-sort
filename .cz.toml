@@ -3,6 +3,7 @@ name = "cz_conventional_commits"
 version = "1.0.0"
 version_files = [
     "project.clj:defproject",
-    ".cz.toml:version"
+    ".cz.toml:version",
+    "VERSION"
 ]
 tag_format = "v$version"
