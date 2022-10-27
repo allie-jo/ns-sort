@@ -1,4 +1,4 @@
-(defproject ns-sort "1.0.0"
+(defproject ns-sort "1.1.0"
   :description "Sort :require block in Clojure namespaces"
   :url "http://github.com/ilevd/ns-sort"
   :dependencies [[org.clojure/clojure "1.10.3"]
