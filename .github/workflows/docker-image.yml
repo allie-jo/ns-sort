@@ -11,6 +11,12 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: allisoncasey327/ns-sort
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -36,4 +42,5 @@ jobs:
         with:
           push: true
           platforms: linux/arm64, linux/amd64
-          tags: allisoncasey327/ns-sort:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
