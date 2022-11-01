@@ -5,6 +5,7 @@ version_files = [
     "project.clj:defproject",
     ".cz.toml:version",
     "VERSION",
-    "Dockerfile:NS_SORT_VERSION"
+    "Dockerfile:NS_SORT_VERSION",
+    ".pre-commit-hooks.yaml:ns-sort"
 ]
 tag_format = "v$version"
