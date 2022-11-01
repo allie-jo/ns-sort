@@ -55,4 +55,9 @@
     (is (unchanged? "(ns test-ns \"docstring\")"))
     (is (unchanged? "(ns test-ns (:require [clojure.string :as str]))"))
     (is (unchanged? "(ns test-ns (:import (java.io File)))"))
-    (is (unchanged? "(ns test-ns (:require [clojure.string :as str]) (:import (java.io File)))"))))
+    (is (unchanged?
+         "(ns test-ns (:require [clojure.string :as str]) (:import (java.io File)))"))))
+
+(deftest keywords-in-body-test
+  (ns-sort/update-code
+   "(ns test-ns (:require [clojure.string :as str])) (println :import)"))
