@@ -10,6 +10,10 @@ repos:
     rev: v0.9.1
     hooks:
       - id: cljfmt-docker
+  - repo: https://github.com/allie-jo/ns-sort.git
+    rev: v1.1.1
+    hooks:
+      - id: ns-sort-docker
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v2.35.0
     hooks:
@@ -23,11 +27,6 @@ repos:
         types: ["dockerfile"]
         entry: ghcr.io/hadolint/hadolint:v2.10.0
         args: [hadolint]
-      - id: ns-sort
-        name: ns-sort (via docker)
-        entry: allisoncasey327/ns-sort
-        language: docker_image
-        files: \.clj$
       - id: clj-kondo
         name: clj-kondo (via docker)
         entry: cljkondo/clj-kondo:2022.10.05-alpine
