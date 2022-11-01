@@ -6,8 +6,23 @@ repos:
       - id: check-yaml
       - id: end-of-file-fixer
       - id: trailing-whitespace
+  - repo: https://github.com/allie-jo/cljfmt-docker.git
+    rev: v0.9.1
+    hooks:
+      - id: cljfmt-docker
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v2.35.0
+    hooks:
+      - id: commitizen
   - repo: local
     hooks:
+      - id: hadolint-docker
+        name: Lint Dockerfiles
+        description: Runs hadolint Docker image to lint Dockerfiles
+        language: docker_image
+        types: ["dockerfile"]
+        entry: ghcr.io/hadolint/hadolint:v2.10.0
+        args: [hadolint]
       - id: ns-sort
         name: ns-sort (via docker)
         entry: allisoncasey327/ns-sort
@@ -19,19 +34,3 @@ repos:
         args: [clj-kondo, --lint]
         language: docker_image
         files: \.clj$
-      - id: cljfmt
-        name: cljfmt (via docker)
-        entry: allisoncasey327/cljfmt
-        language: docker_image
-        args: [fix]
-        files: \.clj$
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v2.35.0
-    hooks:
-      - id: commitizen
-      - id: commitizen-branch
-        stages: [push]
-  # - repo: https://github.com/hadolint/hadolint
-  #   rev: v2.10.0
-  #   hooks:
-  #     - id: hadolint-docker
