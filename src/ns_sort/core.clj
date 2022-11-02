@@ -68,6 +68,8 @@
       (z/prewalk (fn [zloc] (z/seq? zloc))
                  (fn [zloc] (sort-val (z/next (z/down zloc)) get-sortable)))))
 
+(defn is? [sexpr] (fn [zloc] (and (= (z/tag zloc) :token) (= (z/sexpr zloc) sexpr))))
+
 (defn update-code
   "Takes a string `code` and returns an updated string with a sorted `ns` form."
   [code]
@@ -78,8 +80,8 @@
                     z/down
                     z/next
                     z/sexpr)
-          require-zloc (z/find-value zloc z/next ':require)
-          import-zloc (z/find-value zloc z/next ':import)]
+          require-zloc (z/find-next-depth-first (z/subzip zloc) (is? ':require))
+          import-zloc (z/find-next-depth-first (z/subzip zloc) (is? ':import))]
       (cond-> zloc
         require-zloc (z/subedit-> (z/find-value z/next ':require) z/up (sort-require title))
         import-zloc (z/subedit-> (z/find-value z/next ':import) z/up (sort-import title))
